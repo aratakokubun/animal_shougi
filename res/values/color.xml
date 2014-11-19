@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <color name="orange1">#ff8616</color>
+    <color name="orange2">#bf7b3c</color>
+    <color name="orange3">#a65307</color>
+    <color name="orange4">#ffa450</color>
+    <color name="orange5">#ffbc7f</color>
+    
+    <color name="blue1">#1c57a8</color>
+    <color name="blue2">#2f507e</color>
+    <color name="blue3">#09336d</color>
+    <color name="blue4">#4f87d3</color>
+    <color name="blue5">#729bd3</color>
+    
+    <color name="green1">#0fb264</color>
+    <color name="green2">#2a8559</color>
+    <color name="green3">#05733e</color>
+    <color name="green4">#44d891</color>
+    <color name="green5">#6cd8a4</color>
+    
+    <color name="black">#000000</color>
+    <color name="white">#ffffff</color>
+    <color name="hightlight_selected">#60729bd3</color>
+    <color name="hightlight_move">#a0ffbc7f</color>
+    
+</resources>

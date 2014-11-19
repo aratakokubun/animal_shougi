@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">AnimalShougi</string>
+    <string name="action_settings">Settings</string>
+    
+    <!-- Toast Message -->
+    <string name="timeout">通信等の影響により，進行に時間がかかっています．ゲームを続行しますか？</string>
+
+</resources>
