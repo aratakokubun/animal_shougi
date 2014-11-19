@@ -1,9 +1,7 @@
 package com.kkbnart.animalshougi.model;
 
-import android.os.Handler;
-import android.os.Message;
+import android.util.Log;
 
-import com.kkbnart.animalshougi.controller.GameManager;
 
 public abstract class Player {
 	public static final int WAIT = 0;
@@ -14,13 +12,11 @@ public abstract class Player {
 	protected int state;
 	protected int selectedPieceIndex;	// Selected piece to move or put
 	protected int selectedX, selectedY;	// Position to move or put the selected piece
-	protected Handler handler = null;	// Handler to handle message to GameManager
 	
-	public Player(Handler handler) {
+	public Player() {
 		state = WAIT;
 		selectedPieceIndex = -1;
 		selectedX = selectedY = -1;
-		this.handler = handler;
 	}
 	
 	public int getState() {
@@ -36,9 +32,11 @@ public abstract class Player {
 		// If the piece is already selected, de-flag it
 		// If not, change selected index
 		if (this.selectedPieceIndex == selectedPieceIndex) {
+			Log.e("TAG", "select");
 			this.selectedPieceIndex = -1;
 			changeState(SELECT);
 		} else {
+			Log.e("TAG", "put");
 			this.selectedPieceIndex = selectedPieceIndex;
 			changeState(PUT);
 		}
@@ -75,26 +73,11 @@ public abstract class Player {
 	public abstract void onPut();
 	
 	public void onFinish() {
-		try {
-			informFinishAction();
-		} catch (Exception e) {
-			alertTimeout();
-		}
+		clearIndex();
 	}
 	
-	public boolean informFinishAction() {
-		// TODO
-		// ‚í‚´‚í‚´handler‚ðŽg‚í‚È‚­‚Ä‚àGameManager‚¾‚¯‚Åˆ—‚Å‚«‚é‚æ‚¤‚É‚·‚é
-    	Message msg = new Message();
-    	msg.what = GameManager.REQUEST_NEXT;
-    	handler.sendMessage(msg);
-		return true;
-	}
-	
-	public void alertTimeout() {
-		// Alert Dialog
-		// yes -> changeState(WAIT)
-		// no  -> finish game and close connection
-		// TODO
+	public void clearIndex() {
+		selectedPieceIndex = -1;
+		selectedX = selectedY = -1;
 	}
 }

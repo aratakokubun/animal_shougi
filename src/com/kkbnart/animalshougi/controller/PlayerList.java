@@ -16,17 +16,17 @@ public class PlayerList extends ArrayList<Player> {
 	public static final int COM = 1;
 	public static final int BT_MAN = 2;
 	
-	public void registerPlayers(final int[] playerTypes, Handler handler) {
+	public void registerPlayers(final int[] playerTypes) {
 		for (int i = 0; i < playerTypes.length; i++) {
 			switch (playerTypes[i]) {
 			case MAN:
-				add(new Man(handler));
+				add(new Man());
 				break;
 			case COM:
-				add(new Com(handler));
+				add(new Com());
 				break;
 			case BT_MAN:
-				add(new BluetoothMan(handler));
+				add(new BluetoothMan());
 				break;
 			}
 		}

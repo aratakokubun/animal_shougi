@@ -1,11 +1,10 @@
 package com.kkbnart.animalshougi.controller;
 
-import android.annotation.SuppressLint;
 import android.content.res.Resources;
 import android.graphics.Point;
 import android.graphics.Rect;
-import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.MotionEvent;
 
 import com.kkbnart.animalshougi.gui.GameDrawSize;
@@ -44,7 +43,7 @@ public class GameManager {
 	}
 	
 	public void registerPlayers(final int[] playerTypes) {
-		players.registerPlayers(playerTypes, handler);
+		players.registerPlayers(playerTypes);
 	}
 	
 	public void registerPieces(final Resources resources) {
@@ -56,29 +55,6 @@ public class GameManager {
 	}
 	
 	/* ----------------------------------------------------------- */
-	public static final int REQUEST_START = 0;
-	public static final int REQUEST_NEXT  = 1;
-	public static final int REQUEST_END	  = 2;
-	public static final int REQUEST_RESET = 3;
-    @SuppressLint("HandlerLeak")
-	private Handler handler = new Handler() {
-    	public void handleMessage(Message msg) {
-    		switch (msg.what) {
-    		case REQUEST_START:
-    			startGame();
-    			break;
-    		case REQUEST_NEXT:
-    			goNext();
-    			break;
-    		case REQUEST_END:
-    			endGame();
-    			break;
-    		case REQUEST_RESET:
-    			resetGame();
-    			break;
-    		}
-	}};
-	
 	public boolean startGame() {
 		if (checkNull()) {
 			return false;
@@ -122,41 +98,50 @@ public class GameManager {
 		int touchPieceIndex = pieces.getPieceIndexAtPosition(pieceRect, (int)event.getX(), (int)event.getY(), boardColumn, boardRow);
 		boolean isAlreadySelected = (players.get(turn).getState() == Player.PUT);
 		
-		// Touch position is on other pieces or not
-		if (touchPieceIndex < 0) {
-			if (isAlreadySelected) {
-				// There are no pieces on touch position, but on board
-				Point p = Piece.getPiecePosition(pieceRect, (int)event.getX(), (int)event.getY(), boardColumn, boardRow);
-				if (pieces.get(selectedPieceIndex)
-						.tryMoveTo(p.x, p.y, boardColumn, boardRow)) {
-					players.get(turn).putPiece();
-					return true;
-				} else {
-					// TODO
-				}
-			}
-		} else {
-			Piece piece = pieces.get(touchPieceIndex);
-			// User can select pieces which is owned by turn player
-			if (piece.getOwner() == turn) {
-				players.get(turn).selectPiece(touchPieceIndex);
-				return true;
-			} else if (isAlreadySelected) {
-				// Take the other player's piece
-				if (pieces.get(selectedPieceIndex)
-						.tryMoveTo(piece.getX(), piece.getY(), boardColumn, boardRow)) {
-					pieces.get(touchPieceIndex).taken(turn);
-					players.get(turn).putPiece();
-				} else {
-					// TODO
-				}
-				return true;
-			}
-			
+		Point p = Piece.getPiecePosition(pieceRect, (int)event.getX(), (int)event.getY(), boardColumn, boardRow);
+		if (eventSelectPiece(touchPieceIndex)) {
+			return true;
+		} else if (eventPutPiece(isAlreadySelected, selectedPieceIndex, p.x, p.y, boardColumn, boardRow, touchPieceIndex)) {
 			// TODO
-			// OFF BOARD
+			// if Taken piece is Lion, finish game
+			// Turn finished
+			goNext();
+			return true;
+		} else {
+			// TODO
+			// OFF_BOARD
 		}
 		
+		return false;
+	}
+	
+	public boolean eventSelectPiece(final int touchPieceIndex) {
+		if (touchPieceIndex >= 0 && pieces.get(touchPieceIndex).getOwner() == turn) {
+			players.get(turn).selectPiece(touchPieceIndex);
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	public boolean eventPutPiece(final boolean isAlreadySelected, final int selectedPieceIndex, final int x, final int y, final int column, final int row, final int touchPieceIndex) {
+		if (isAlreadySelected) {
+			if (pieces.get(selectedPieceIndex).tryMoveTo(x, y, column, row)) {
+				if (touchPieceIndex >= 0) {
+					pieces.get(touchPieceIndex).taken(turn);
+				}
+				players.get(turn).putPiece();
+				return true;
+			} else {
+				return eventErrorPopUp();
+			}
+		}
+		return false;
+	}
+	
+	public boolean eventErrorPopUp() {
+		// TODO
+		// pop up message
 		return false;
 	}
 	

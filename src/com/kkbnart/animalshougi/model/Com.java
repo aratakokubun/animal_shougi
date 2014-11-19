@@ -4,8 +4,8 @@ import android.os.Handler;
 
 public class Com extends Player {
 
-	public Com(Handler handler) {
-		super(handler);
+	public Com() {
+		super();
 	}
 
 	@Override

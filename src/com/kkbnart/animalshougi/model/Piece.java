@@ -86,7 +86,9 @@ public abstract class Piece implements PieceOperate {
 	
 	@Override
 	public void drawPieceImage(final Rect rect, final int column, final int row, Canvas canvas) {
-		getImage(rect, column, row).draw(canvas);
+		if (state == ON_BOARD) {
+			getImage(rect, column, row).draw(canvas);
+		}
 	}
 	
 	/* ------------------------------------------------------ */

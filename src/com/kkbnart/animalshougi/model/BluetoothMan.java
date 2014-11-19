@@ -4,8 +4,8 @@ import android.os.Handler;
 
 public class BluetoothMan extends Player {
 
-	public BluetoothMan(Handler handler) {
-		super(handler);
+	public BluetoothMan() {
+		super();
 	}
 
 	@Override

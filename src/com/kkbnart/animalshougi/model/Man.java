@@ -1,13 +1,11 @@
 package com.kkbnart.animalshougi.model;
 
-import android.os.Handler;
-
 import com.kkbnart.animalshougi.gui.TouchEnableController;
 
 public class Man extends Player {
 
-	public Man(Handler handler) {
-		super(handler);
+	public Man() {
+		super();
 	}
 
 	@Override
