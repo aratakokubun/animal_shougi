@@ -1,10 +1,10 @@
 package com.kkbnart.animalshougi.gui;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
-
 import com.kkbnart.animalshougi.controller.GameManager;
 
 public class TouchDetectableSurfaceView extends SurfaceView {
@@ -28,6 +28,7 @@ public class TouchDetectableSurfaceView extends SurfaceView {
 	}
 
 	/* -------------------------------------------------------------------------------------- */
+	@SuppressLint("ClickableViewAccessibility")
 	@Override
     public boolean onTouchEvent(MotionEvent event) {
 		if (gameManager != null && TouchEnableController.getInstance().getIsViewTouchEnabled()) {

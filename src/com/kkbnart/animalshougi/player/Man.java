@@ -1,8 +1,8 @@
-package com.kkbnart.animalshougi.model;
+package com.kkbnart.animalshougi.player;
 
 import com.kkbnart.animalshougi.gui.TouchEnableController;
 
-public class Man extends Player {
+public class Man extends AnimalShougiPlayer {
 
 	public Man() {
 		super();
@@ -27,5 +27,10 @@ public class Man extends Player {
 	public void onFinish() {
 		TouchEnableController.getInstance().setIsViewTouchEnabled(false);
 		super.onFinish();
+	}
+	
+	@Override
+	public String toString() {
+		return "Man";
 	}
 }

@@ -6,5 +6,12 @@
     
     <!-- Toast Message -->
     <string name="timeout">通信等の影響により，進行に時間がかかっています．ゲームを続行しますか？</string>
+    
+    <!-- Dialog Message -->
+    <string name="game_end_dialog">ゲーム終了</string>
+    <string name="game_end_result">の勝利です！</string>
+    <string name="game_end_option">もう一勝負しますか？</string>
+    <string name="once_more">もう一回!</string>
+    <string name="back_menu">メニューへ</string>
 
 </resources>

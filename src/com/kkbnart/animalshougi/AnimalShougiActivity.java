@@ -25,6 +25,8 @@ import com.kkbnart.animalshougi.gui.HowtoViewController;
 import com.kkbnart.animalshougi.gui.MenuViewController;
 import com.kkbnart.animalshougi.gui.SettingViewController;
 import com.kkbnart.animalshougi.gui.ViewController;
+import com.kkbnart.utils.LaunchAlertDialogHandler;
+import com.kkbnart.utils.LaunchDialogHandler;
 
 public class AnimalShougiActivity extends Activity {
 	// Debugging
@@ -47,7 +49,6 @@ public class AnimalShougiActivity extends Activity {
 	/* -------------------------------------------------------------------------------- */
 	@Override
 	public void onCreate(Bundle savedInstanceState){
-		
 		// set bottom menu bar transparent
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		
@@ -56,6 +57,8 @@ public class AnimalShougiActivity extends Activity {
 		
 		mode = MENU;
 		content = (LinearLayout) findViewById(R.id.content);
+		LaunchAlertDialogHandler.getInstance().setActivity(this);
+		LaunchDialogHandler.getInstance().setActivity(this);
 		setMultipleViewController();
 	}
 

@@ -2,16 +2,15 @@ package com.kkbnart.animalshougi.controller;
 
 import android.content.res.Resources;
 import android.graphics.Point;
-import android.graphics.Rect;
-import android.os.Message;
-import android.util.Log;
 import android.view.MotionEvent;
 
+import com.kkbnart.animalshougi.board.Board;
+import com.kkbnart.animalshougi.controller.PieceArrayCategory.PIECE_ARRAY;
 import com.kkbnart.animalshougi.gui.GameDrawSize;
+import com.kkbnart.animalshougi.gui.GameViewController;
 import com.kkbnart.animalshougi.gui.TouchEnableController;
-import com.kkbnart.animalshougi.model.Board;
-import com.kkbnart.animalshougi.model.Piece;
-import com.kkbnart.animalshougi.model.Player;
+import com.kkbnart.animalshougi.player.Player;
+import com.kkbnart.animalshougi.player.SelectedPiece;
 
 public class GameManager {
 	public static final int GAME_NORMAL		= 0;
@@ -25,33 +24,33 @@ public class GameManager {
 	private int turn;	// Turn of which player 0:former 1:latter
 	private int countTurn;
 	
-	public PieceList pieces;
+	public RestorablePieceList pieces;
 	public Board board;
 	public PlayerList players;
+	public GameDrawSize gameDrawSize;
+	
+	private GameViewController parent;
 
-	public GameManager() {
+	public GameManager(GameViewController parent) {
 		type = GAME_NORMAL;
 		turn = 0;
 		countTurn = 0;
-		pieces = new PieceList();
+		pieces = new RestorablePieceList();
 		players = new PlayerList();
+		this.parent = parent;
 	}
 
 	/* ----------------------------------------------------------- */
-	public void setGameType(final int type) {
+	public void registerGameSettings(final int type, final int[] playerTypes, final Resources resources) {
 		this.type = type;
-	}
-	
-	public void registerPlayers(final int[] playerTypes) {
 		players.registerPlayers(playerTypes);
-	}
-	
-	public void registerPieces(final Resources resources) {
 		pieces.registerPieces(type, resources);
+		board = new Board(type, resources);
+		gameDrawSize = new GameDrawSize(type);
 	}
 	
-	public void registerBoard(final Resources resources) {
-		board = new Board(type, resources);
+	public void resetPieces(final Resources resources) {
+		pieces.registerPieces(type, resources);
 	}
 	
 	/* ----------------------------------------------------------- */
@@ -61,8 +60,9 @@ public class GameManager {
 		} else {
 			turn = 0;
 			countTurn = 0;
-			TouchEnableController.getInstance().setIsViewTouchEnabled(false);
+			TouchEnableController.getInstance().setIsViewTouchEnabled(true);
 			players.switchTurn(turn);
+			requestDrawActivity();
 			return true;
 		}
 	}
@@ -71,69 +71,82 @@ public class GameManager {
 		turn = (turn+1)%2;
 		++countTurn;
 		players.switchTurn(turn);
+		requestDrawActivity();
 	}
 	
-	public void endGame() {
-		// TODO
+	public void endGame(final int winnerTurn) {
+		TouchEnableController.getInstance().setIsViewTouchEnabled(true);
+		parent.showGameEndDialog(winnerTurn, players.get(winnerTurn));
 	}
 
 	public void resetGame() {
+		pieces.clear();
+	}
+	
+	public void cleraGame() {
 		pieces.clear();
 		board = null;
 		players.clear();
 	}
 	
-	/* ----------------------------------------------------------- */
-	public boolean checkNull() {
+	private void requestDrawActivity() {
+		parent.drawSurfaceView();
+	}
+	
+	private boolean checkNull() {
 		return (pieces.isEmpty() || board == null || players.isEmpty());
 	}
 	
+	/* ----------------------------------------------------------- */
 	public boolean onTouchEvent(MotionEvent event) {
 		if (event.getAction() != MotionEvent.ACTION_DOWN) return false;
 		
-		// Calculate with board and piece size
-		Rect pieceRect = GameDrawSize.getInstance().getPieceAreaRect();
-		int boardColumn = board.getBoardColumn(), boardRow = board.getBoardRow();
-		int selectedPieceIndex = players.get(turn).getSelectedPieceIndex();
-		int touchPieceIndex = pieces.getPieceIndexAtPosition(pieceRect, (int)event.getX(), (int)event.getY(), boardColumn, boardRow);
-		boolean isAlreadySelected = (players.get(turn).getState() == Player.PUT);
+		SelectedPiece touchedPiece = pieces.getPieceAtPosition(gameDrawSize, (int)event.getX(), (int)event.getY());
+		Point p = gameDrawSize.getPiecePosition((int)event.getX(), (int)event.getY());
 		
-		Point p = Piece.getPiecePosition(pieceRect, (int)event.getX(), (int)event.getY(), boardColumn, boardRow);
-		if (eventSelectPiece(touchPieceIndex)) {
+		if (eventSelectPiece(touchedPiece)) {
+			requestDrawActivity();
 			return true;
-		} else if (eventPutPiece(isAlreadySelected, selectedPieceIndex, p.x, p.y, boardColumn, boardRow, touchPieceIndex)) {
-			// TODO
-			// if Taken piece is Lion, finish game
-			// Turn finished
-			goNext();
+		} else if (eventPutPiece(p.x, p.y, touchedPiece)) {
+			requestDrawActivity();
 			return true;
-		} else {
-			// TODO
-			// OFF_BOARD
 		}
 		
+		requestDrawActivity();
 		return false;
 	}
 	
-	public boolean eventSelectPiece(final int touchPieceIndex) {
-		if (touchPieceIndex >= 0 && pieces.get(touchPieceIndex).getOwner() == turn) {
-			players.get(turn).selectPiece(touchPieceIndex);
+	public boolean eventSelectPiece(final SelectedPiece touchedPiece) {
+		// Check if the piece is owned by the player
+		if (touchedPiece.isSelected() && touchedPiece.owner == turn) {
+			players.get(turn).selectPiece(touchedPiece);
 			return true;
 		} else {
 			return false;
 		}
 	}
 	
-	public boolean eventPutPiece(final boolean isAlreadySelected, final int selectedPieceIndex, final int x, final int y, final int column, final int row, final int touchPieceIndex) {
-		if (isAlreadySelected) {
-			if (pieces.get(selectedPieceIndex).tryMoveTo(x, y, column, row)) {
-				if (touchPieceIndex >= 0) {
-					pieces.get(touchPieceIndex).taken(turn);
-				}
+	public boolean eventPutPiece (final int x, final int y, final SelectedPiece touchedPiece) {
+		SelectedPiece selectedPiece = players.get(turn).getSelectedPiece();
+		if (players.get(turn).getIsState(Player.PUT)) {
+			if (pieces.get(selectedPiece).tryMoveTo(gameDrawSize.getColumn(), gameDrawSize.getRow(), x, y)) {
 				players.get(turn).putPiece();
+				eventTakePiece(touchedPiece);
+				goNext();
 				return true;
 			} else {
 				return eventErrorPopUp();
+			}
+		}
+		return false;
+	}
+	
+	public boolean eventTakePiece (final SelectedPiece takenPiece) {
+		if (takenPiece.isSelected()) {
+			boolean isKingPiece = pieces.get(takenPiece).isKingPiece(); // Get king flag before piece move
+			pieces.taken(takenPiece, turn, PIECE_ARRAY.OFF_BOARD);
+			if (isKingPiece) {
+				endGame(turn);
 			}
 		}
 		return false;

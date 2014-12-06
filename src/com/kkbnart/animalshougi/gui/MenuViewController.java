@@ -19,12 +19,21 @@ public class MenuViewController extends ViewController<AnimalShougiActivity> {
 		isViewPrepared = false;
 		
 		// TODO
+		// Change layout of menu
 		
-		final Button button = (Button) findViewByIdInView(R.id.button);
-		button.setOnClickListener(new View.OnClickListener() {
+		final Button buttonStart = (Button) findViewByIdInView(R.id.button_start);
+		buttonStart.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				parentActivity.switchMode(AnimalShougiActivity.GAME_SET);
+			}
+		});
+		
+		final Button buttonHowto = (Button) findViewByIdInView(R.id.button_howto);
+		buttonHowto.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				parentActivity.switchMode(AnimalShougiActivity.HOWTO);
 			}
 		});
 	}

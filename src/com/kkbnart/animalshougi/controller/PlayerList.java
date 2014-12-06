@@ -2,14 +2,13 @@ package com.kkbnart.animalshougi.controller;
 
 import java.util.ArrayList;
 
-import android.os.Handler;
+import com.kkbnart.animalshougi.player.AnimalShougiPlayer;
+import com.kkbnart.animalshougi.player.BluetoothMan;
+import com.kkbnart.animalshougi.player.Com;
+import com.kkbnart.animalshougi.player.Man;
+import com.kkbnart.animalshougi.player.Player;
 
-import com.kkbnart.animalshougi.model.BluetoothMan;
-import com.kkbnart.animalshougi.model.Com;
-import com.kkbnart.animalshougi.model.Man;
-import com.kkbnart.animalshougi.model.Player;
-
-public class PlayerList extends ArrayList<Player> {
+public class PlayerList extends ArrayList<AnimalShougiPlayer> {
 	private static final long serialVersionUID = 1L; // What does this function for? Have to survey why this suppress warning.
 
 	public static final int MAN = 0;

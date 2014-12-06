@@ -1,25 +1,23 @@
 package com.kkbnart.animalshougi.gui;
 
-import java.util.ListIterator;
-
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Point;
 import android.graphics.PorterDuff;
-import android.graphics.Rect;
 import android.util.Log;
+import android.view.Display;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.WindowManager;
 
 import com.kkbnart.animalshougi.R;
-import com.kkbnart.animalshougi.controller.FpsManager;
 import com.kkbnart.animalshougi.controller.GameManager;
-import com.kkbnart.animalshougi.model.Piece;
-import com.kkbnart.animalshougi.model.Player;
+import com.kkbnart.animalshougi.player.AnimalShougiPlayer;
+import com.kkbnart.animalshougi.player.Player;
+import com.kkbnart.animalshougi.player.SelectedPiece;
 
-public class GameSurfaceView implements SurfaceHolder.Callback, Runnable {
+public class GameSurfaceView implements SurfaceHolder.Callback {
 	public static final String TAG = "Game Surface View";
 	public static final boolean D = true;
 	
@@ -27,12 +25,6 @@ public class GameSurfaceView implements SurfaceHolder.Callback, Runnable {
 
     // Game Manager to draw each item of objects
     GameManager gameManager;
-    
-    // Thread Loop
-    private static final long SLEEP = 100l;
-    private FpsManager fpsManager;
-	private Thread thread = null;
-	private boolean isRunning;
 	
 	private Context context;
     
@@ -41,31 +33,17 @@ public class GameSurfaceView implements SurfaceHolder.Callback, Runnable {
         holder = surfaceView.getHolder();
         holder.addCallback(this);
         this.gameManager = gameManager;
-        fpsManager = new FpsManager();
-        isRunning = false;
-    }
-    
-    public void requestStartThread() {
-    	if (thread == null) {
-    		thread = new Thread(this);
-            isRunning = true;
-    	}
-    }
-    
-    public void requestStopThread() {
-    	isRunning = false;
     }
     
     /* -------------------------------------------------------------- */
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-		if (thread != null) {
-			if(!thread.isAlive()){
-				thread.start();
-			}
-		}
-		GameDrawSize.getInstance().updateSize(width, height);
-		GameDrawSize.getInstance().calcBoardSize(gameManager.board);
+    	gameManager.gameDrawSize.updateSize(width, height);
+    	WindowManager wm = (WindowManager)context.getSystemService(Context.WINDOW_SERVICE);
+    	Display disp = wm.getDefaultDisplay();
+		int width = disp.getWidth();
+    	int height = disp.getHeight();
+    	doDraw();
     }
 
     @Override
@@ -75,22 +53,6 @@ public class GameSurfaceView implements SurfaceHolder.Callback, Runnable {
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-    	thread = null;
-    }
-
-    @Override
-    public void run() {
-		while (isRunning && thread != null) {
-			try{
-				long elapsedTime = fpsManager.getElapsedTimeAndMeasure();
-				long sleepTime = (SLEEP > elapsedTime) ? SLEEP-elapsedTime : 0;
-				Thread.sleep(sleepTime);
-			}	catch(InterruptedException e){
-				if (D) Log.e("Error", "Sleep Execute Error!");
-			}
-				
-			doDraw();
-		}
     }
     
     /* -------------------------------------------------------------- */
@@ -119,7 +81,7 @@ public class GameSurfaceView implements SurfaceHolder.Callback, Runnable {
     }
     
     public void drawBoard(Canvas canvas) {
-    	gameManager.board.getImage(GameDrawSize.getInstance().getBoardRect()).draw(canvas);
+    	gameManager.board.getImage(gameManager.gameDrawSize.getBoardImageRect()).draw(canvas);
     }
     
     public void drawHighLight(Canvas canvas, Paint paint) {
@@ -128,40 +90,16 @@ public class GameSurfaceView implements SurfaceHolder.Callback, Runnable {
     	
     	switch (state) {
     	case Player.PUT:
-    		Player player = gameManager.players.get(turn);
-    		Piece piece = gameManager.pieces.get(player.getSelectedPieceIndex());
-    		Rect pieceArea = GameDrawSize.getInstance().getPieceAreaRect();
-    		int boardColumn = gameManager.board.getBoardColumn(), boardRow = gameManager.board.getBoardRow();
+    		AnimalShougiPlayer player = gameManager.players.get(turn);
+    		SelectedPiece selectedPiece = player.getSelectedPiece();
     		
-    		if (piece != null) {
-	    		// Highlight selected piece (light blue)
-	    		paint.setColor(context.getResources().getColor(R.color.hightlight_selected));
-				canvas.drawRect(piece.getPieceRect(pieceArea, boardColumn, boardRow), paint);
-				
-	    		// Highlight next moveÅ@(light blue)
-	    		// paint.setColor(context.getResources().getColor(R.color.hightlight_move));
-				ListIterator<Point> nextMoves = piece.getNextMoves(boardColumn, boardRow).listIterator();
-				while (nextMoves.hasNext()) {
-					Point p = nextMoves.next();
-					// Highlight if no other my pieces exist in the point
-					if (!gameManager.pieces.isPlayerPieceExist(p.x, p.y, turn)) {
-						canvas.drawRect(Piece.getPieceRect(pieceArea, p.x, p.y, boardColumn, boardRow), paint);
-					}
-				}
-	    		break;
-    		}
+    		gameManager.pieces.drawHightlights(gameManager.gameDrawSize, selectedPiece, canvas, paint,
+    				context.getResources().getColor(R.color.hightlight_selected));
     	}
     }
     
 	public void drawPieces(Canvas canvas) {
-    	ListIterator<Piece> it = gameManager.pieces.listIterator();
-    	while (it.hasNext()) {
-    		it.next().drawPieceImage(
-    				GameDrawSize.getInstance().getPieceAreaRect(),
-    				gameManager.board.getBoardColumn(),
-    				gameManager.board.getBoardRow(),
-    				canvas);
-    	}
+		gameManager.pieces.drawPieceImages(gameManager.gameDrawSize, canvas);
     }
     
     public void drawText(Canvas canvas) {

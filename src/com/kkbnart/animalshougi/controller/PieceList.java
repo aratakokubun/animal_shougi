@@ -1,78 +1,103 @@
 package com.kkbnart.animalshougi.controller;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.ListIterator;
+import java.util.Map;
 
+import android.annotation.SuppressLint;
 import android.content.res.Resources;
-import android.graphics.Rect;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Point;
 
-import com.kkbnart.animalshougi.R;
-import com.kkbnart.animalshougi.model.Chicken;
-import com.kkbnart.animalshougi.model.Elephant;
-import com.kkbnart.animalshougi.model.Giraffe;
-import com.kkbnart.animalshougi.model.Lion;
-import com.kkbnart.animalshougi.model.Piece;
+import com.kkbnart.animalshougi.board.BoardSize;
+import com.kkbnart.animalshougi.controller.PieceArrayCategory.PIECE_ARRAY;
+import com.kkbnart.animalshougi.piece.AnimalPiece;
+import com.kkbnart.animalshougi.piecearray.AnimalPieceFactory;
+import com.kkbnart.animalshougi.piecearray.PieceArray;
+import com.kkbnart.animalshougi.player.SelectedPiece;
 
-public class PieceList extends ArrayList<Piece> {
-	private static final long serialVersionUID = 1L; // What does this function for? Have to survey why this suppress warning.
+@SuppressLint("UseSparseArrays")
+public class PieceList {
+	private static final int ARRAY_SIZE = 2;
+	
+	Map<PIECE_ARRAY, ArrayList<PieceArray<AnimalPiece>>> pieceArrays = new HashMap<PIECE_ARRAY, ArrayList<PieceArray<AnimalPiece>>>();
 
+	public PieceList() {
+		super();
+		pieceArrays.put(PIECE_ARRAY.PLAYER, new ArrayList<PieceArray<AnimalPiece>>());
+		pieceArrays.put(PIECE_ARRAY.OFF_BOARD, new ArrayList<PieceArray<AnimalPiece>>());
+	}
+	
 	public void registerPieces(final int type, final Resources resources) {
-		switch (type) {
-		case GameManager.GAME_NORMAL:
-			registerNormal(resources);
-			break;
-		case GameManager.GAME_GOROGORO:
-			registerGoroGoro(resources);
-			break;
-		case GameManager.GAME_LARGE:
-			registerLarge(resources);
-			break;
+		clear();
+		AnimalPieceFactory factory = new AnimalPieceFactory();
+		for (int i = 0; i < ARRAY_SIZE; i++) {
+			pieceArrays.get(PIECE_ARRAY.PLAYER).add(factory.createPieces(type, i, resources));
+			pieceArrays.get(PIECE_ARRAY.OFF_BOARD).add(factory.createOffBoardPieces(i));
 		}
 	}
 	
-	public void registerNormal(final Resources resources) {
-		// 2 Chicken [1,1], [1,2]
-		int[] chickenImageIds = {R.drawable.chick, R.drawable.chicken};
-		add(new Chicken(Piece.ON_BOARD, GameManager.SECOND, 	1, 1, chickenImageIds, resources));
-		add(new Chicken(Piece.ON_BOARD, GameManager.FIRST, 1, 2, chickenImageIds, resources));
-		// 2 elephant [2,0], [0,3]
-		add(new Elephant(Piece.ON_BOARD, GameManager.SECOND,  2, 0, R.drawable.elephant, resources));
-		add(new Elephant(Piece.ON_BOARD, GameManager.FIRST, 0, 3, R.drawable.elephant, resources));
-		// 2 giraffe [0,0], [2,3]
-		add(new Giraffe(Piece.ON_BOARD, GameManager.SECOND,  0, 0, R.drawable.giraffe, resources));
-		add(new Giraffe(Piece.ON_BOARD, GameManager.FIRST, 2, 3, R.drawable.giraffe, resources));
-		// 2 lion [1,0], [1,3]
-		add(new Lion(Piece.ON_BOARD, GameManager.SECOND,  1, 0, R.drawable.lion, resources));
-		add(new Lion(Piece.ON_BOARD, GameManager.FIRST, 1, 3, R.drawable.lion, resources));
+	public void clear() {
+		pieceArrays.get(PIECE_ARRAY.PLAYER).clear();
+		pieceArrays.get(PIECE_ARRAY.OFF_BOARD).clear();
 	}
 	
-	public void registerGoroGoro(final Resources resources) {
-		// TODO
-	}
-	
-	public void registerLarge(final Resources resources) {
-		// TODO
-	}
-	
-	public boolean isPlayerPieceExist(final int x, final int y, final int turn) {
-		ListIterator<Piece> it = listIterator();
-		while (it.hasNext()) {
-			if (it.next().getIsPlayerPiece(x, y, turn)) {
-				return true;
+	public void drawHightlights(final BoardSize boardSize, final SelectedPiece selectedPiece, Canvas canvas, Paint paint, final int hightlightColor) {
+		int column = boardSize.getColumn(), row = boardSize.getRow();
+		paint.setColor(hightlightColor);
+		
+		// Highlight selected piece (light blue)
+		getArr(selectedPiece).drawHighLights(boardSize, selectedPiece.selectedPieceIndex, canvas, paint);
+
+		// Highlight next moveÅ@(light blue)
+		ListIterator<Point> nextMoves = get(selectedPiece).getNextMoves(column, row).listIterator();
+		while (nextMoves.hasNext()) {
+			Point p = nextMoves.next();
+			if ((selectedPiece.selectFrom == PIECE_ARRAY.PLAYER && !getArr(selectedPiece).exist(p.x, p.y))
+					|| (selectedPiece.selectFrom == PIECE_ARRAY.OFF_BOARD 
+					&& !pieceArrays.get(PIECE_ARRAY.PLAYER).get(0).exist(column, row) 
+					&& !pieceArrays.get(PIECE_ARRAY.PLAYER).get(1).exist(column, row))) {
+				canvas.drawRect(boardSize.getBoardRect().getPieceRect(p.x, p.y), paint);
 			}
 		}
-		return false;
 	}
 	
-	// If piece not exist, return -1
-	public int getPieceIndexAtPosition(final Rect pieceRect, final int x, final int y, final int column, final int row) {
-		ListIterator<Piece> it = listIterator();
-		while (it.hasNext()) {
-			// If piece rectangle contains touch position
-			if (it.next().getIsOnBoardPiece(pieceRect, column, row, x, y)) {
-				return it.previousIndex();
+	public void drawPieceImages(final BoardSize boardSize, Canvas canvas) {
+		for (ArrayList<PieceArray<AnimalPiece>> val : pieceArrays.values()) {
+			for (int i = 0; i < ARRAY_SIZE; i++) {
+				val.get(i).drawImages(boardSize, canvas);
 			}
 		}
-		return -1;
+	}
+	
+	public AnimalPiece get(final SelectedPiece selectedPiece) {
+		return pieceArrays.get(selectedPiece.selectFrom).get(selectedPiece.owner).get(selectedPiece.selectedPieceIndex);
+	}
+	
+	public PieceArray<AnimalPiece> getArr(final SelectedPiece selectedPiece) {
+		return pieceArrays.get(selectedPiece.selectFrom).get(selectedPiece.owner);
+	}
+	
+	public SelectedPiece getPieceAtPosition(final BoardSize boardSize, final int x, final int y) {
+		for (ArrayList<PieceArray<AnimalPiece>> val : pieceArrays.values()) {
+			for (int i = 0; i < ARRAY_SIZE; i++) {
+				int pieceIndex = val.get(i).getPieceIndexAtPosition(boardSize, x, y);
+				if (pieceIndex != -1) {
+					return new SelectedPiece(PIECE_ARRAY.PLAYER, pieceIndex, -1, -1, i);
+				}
+			}
+		}
+		return new SelectedPiece();
+	}
+	
+	public void taken(final SelectedPiece selectedPiece, final int turn, final PIECE_ARRAY to) {
+		AnimalPiece piece = getArr(selectedPiece).remove(selectedPiece.selectedPieceIndex); // from
+		pieceArrays.get(to).get(turn).add(piece); // to
+	}
+	
+	public boolean isEmpty() {
+		return pieceArrays.get(PIECE_ARRAY.PLAYER).isEmpty() && pieceArrays.get(PIECE_ARRAY.OFF_BOARD).isEmpty();
 	}
 }

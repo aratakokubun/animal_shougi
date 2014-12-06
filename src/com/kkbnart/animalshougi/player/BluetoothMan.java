@@ -1,10 +1,9 @@
-package com.kkbnart.animalshougi.model;
+package com.kkbnart.animalshougi.player;
 
-import android.os.Handler;
 
-public class Com extends Player {
+public class BluetoothMan extends AnimalShougiPlayer {
 
-	public Com() {
+	public BluetoothMan() {
 		super();
 	}
 
@@ -24,5 +23,10 @@ public class Com extends Player {
 	public void onPut() {
 		// TODO Auto-generated method stub
 		
+	}
+	
+	@Override
+	public String toString() {
+		return "BluetoothMan";
 	}
 }
